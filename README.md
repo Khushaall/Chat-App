@@ -23,4 +23,4 @@ A minimal real-time chat application built with WebSockets. Just enter a name, e
 git clone https://github.com/Khushaall/chat-app.git
 cd chat-app
 npm install
-node server.js
+node index.js
