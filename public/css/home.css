@@ -1,0 +1,153 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  display: flex;
+}
+
+/* Layout */
+.container {
+  display: flex;
+  width: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: #1e293b;
+  border-right: 1px solid #334155;
+  padding: 15px;
+}
+
+.sidebar h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #cbd5f5;
+}
+
+#users li {
+  font-size: 14px;
+  padding: 6px 0;
+  color: #94a3b8;
+}
+
+/* Chat */
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  padding: 14px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  font-weight: 500;
+}
+
+/* Messages */
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  list-style: none;
+}
+
+/* Message bubble */
+.message {
+  max-width: 70%;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* My message */
+.me {
+  background: #6366f1;
+  color: white;
+  margin-left: auto;
+}
+
+/* Other message */
+.other {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+/* Username */
+.username {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+/* System */
+.system {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Typing */
+#typing {
+  padding-left: 15px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Input */
+#form {
+  display: flex;
+  padding: 10px;
+  background: #1e293b;
+  border-top: 1px solid #334155;
+}
+
+#input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+button {
+  margin-left: 10px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #6366f1;
+  color: white;
+}
+
+/* Scroll smooth */
+#messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+#messages::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .message {
+    max-width: 85%;
+  }
+}

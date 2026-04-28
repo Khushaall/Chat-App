@@ -2,56 +2,78 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
-const path= require('path');
+const path = require('path');
 const { Server } = require("socket.io");
+
 const io = new Server(server);
 
-
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
-app.set("view engine" , "ejs" );
-app.use(express.static(path.join(__dirname,"public")));
+app.use(express.urlencoded({ extended: true }));
+app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname, "public")));
 
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
     res.render("start");
 });
 
-app.post("/home",(req,res)=>{
+app.post("/home", (req, res) => {
     const usrnm = req.body.name;
-    res.render("home",{usrnm});
+    const room = req.body.room;
+
+    res.render("home", { usrnm, room });
 });
 
+const users = {};
+const typingUsers = {};
 
+io.on('connection', (socket) => {
 
-io.on('connection',(socket)=>{
+    socket.on('join-room', ({ username, room }) => {
+        socket.username = username;
+        socket.room = room;
 
-    console.log('user connected');
+        socket.join(room);
 
-    socket.on('chat message',(msg)=>{
-        io.emit('chat message', msg);
-        // console.log('message: ' + msg);
+        if (!users[room]) users[room] = [];
+        users[room].push(username);
+
+        if (!typingUsers[room]) typingUsers[room] = new Set();
+
+        io.to(room).emit('room-users', users[room]);
+
+        socket.to(room).emit('user-connected', `${username} joined`);
     });
 
+    socket.on('chat message', (msg) => {
+        io.to(socket.room).emit('chat message', {
+            user: socket.username,
+            message: msg
+        });
+    });
 
-    socket.on('user-joined',(name)=>{
+    // 🔥 FIXED TYPING
+    socket.on('typing', () => {
+        typingUsers[socket.room].add(socket.username);
+        socket.to(socket.room).emit('typing', socket.username);
+    });
 
-        io.emit('user-connected',`${usrnm} has joined`);
-    })
-    
+    socket.on('stop-typing', () => {
+        typingUsers[socket.room].delete(socket.username);
+        socket.to(socket.room).emit('stop-typing', socket.username);
+    });
 
-    socket.on('disconnect',()=>{
-        // console.log('user disconnected');
-    console.log('user disconnected');
+    socket.on('disconnect', () => {
+        if (socket.room) {
+            users[socket.room] = users[socket.room].filter(u => u !== socket.username);
+            typingUsers[socket.room].delete(socket.username);
 
-        io.emit('user-disconnected',`${usrnm} has left`);
-    })
+            io.to(socket.room).emit('room-users', users[socket.room]);
+
+            socket.to(socket.room).emit('user-disconnected', `${socket.username} left`);
+        }
+    });
 });
 
-
-
-
-
-server.listen(3000,()=>{
-    console.log('listening on *:3000');
-})
-
+server.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+});

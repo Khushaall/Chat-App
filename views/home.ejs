@@ -1,64 +1,118 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Socket.IO chat</title>
-    <style>
-      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+<head>
+  <title>Chat</title>
+  <link rel="stylesheet" href="/css/home.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+</head>
 
-      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-      #input:focus { outline: none; }
-      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+<body>
 
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages > li { padding: 0.5rem 1rem; }
-      #messages > li:nth-child(odd) { background: #efefef; }
-    </style>
+<div class="container">
 
-  </head>
-  <body>
+  <div class="sidebar">
+    <h3>Room: <%= room %></h3>
+    <ul id="users"></ul>
+  </div>
 
-    <h3>Welcome, <%= usrnm %>!</h3>
+  <div class="chat">
+
+    <header>
+      <%= usrnm %>
+    </header>
+
     <ul id="messages"></ul>
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
+    <div id="typing"></div>
+
+    <form id="form">
+      <input id="input" placeholder="Type message..." autocomplete="off"/>
+      <button>Send</button>
     </form>
-    <script src="/socket.io/socket.io.js"></script>
-    
-    <script>
-      var socket=io();
 
-      var form = document.getElementById('form');
-      var input = document.getElementById('input');
-      var messages=document.getElementById('messages');
+  </div>
 
-      
-      form.addEventListener('submit',function(e){
-        e.preventDefault();
-        if(input.value){
-          socket.emit('chat message',input.value);
-          input.value='';
-        }
-      });
+</div>
 
-      socket.on('chat message',function(msg){
-        var item= document.createElement('li');
-        item.textContent = msg;
-        messages.appendChild(item);
-        window.scrollTo(0,document.body.scrollHeight);
-      });
+<script src="/socket.io/socket.io.js"></script>
 
-      socket.on('user-connected', (message) => {
-        const div = document.createElement('div');
-        div.textContent = message;
-        document.getElementById('messages').appendChild(div);
-      });
-  
-      socket.on('user-disconnected', (message) => {
-        const div = document.createElement('div');
-        div.textContent = message;
-        document.getElementById('messages').appendChild(div);
-      });
-    </script>
-  </body>
+<script>
+const socket = io();
+
+const username = "<%= usrnm %>";
+const room = "<%= room %>";
+
+const input = document.getElementById('input');
+const form = document.getElementById('form');
+const messages = document.getElementById('messages');
+const typingDiv = document.getElementById('typing');
+const usersList = document.getElementById('users');
+
+socket.emit('join-room', { username, room });
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  if (input.value.trim()) {
+    socket.emit('chat message', input.value);
+    socket.emit('stop-typing');
+    input.value = '';
+  }
+});
+
+socket.on('chat message', data => {
+  const li = document.createElement('li');
+  li.classList.add('message', data.user === username ? 'me' : 'other');
+
+  li.innerHTML = `
+    <div class="username">${data.user}</div>
+    ${data.message}
+  `;
+
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on('room-users', users => {
+  usersList.innerHTML = '';
+  users.forEach(u => {
+    const li = document.createElement('li');
+    li.textContent = u;
+    usersList.appendChild(li);
+  });
+});
+
+/* Typing */
+let typingUsers = new Set();
+
+input.addEventListener('input', () => {
+  socket.emit('typing');
+});
+
+socket.on('typing', user => {
+  if (user !== username) {
+    typingUsers.add(user);
+    renderTyping();
+  }
+});
+
+socket.on('stop-typing', user => {
+  typingUsers.delete(user);
+  renderTyping();
+});
+
+function renderTyping() {
+  typingDiv.textContent = typingUsers.size
+    ? [...typingUsers].join(', ') + ' typing...'
+    : '';
+}
+
+let timeout;
+input.addEventListener('keyup', () => {
+  clearTimeout(timeout);
+  timeout = setTimeout(() => {
+    socket.emit('stop-typing');
+  }, 1000);
+});
+</script>
+
+</body>
 </html>
