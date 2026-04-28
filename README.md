@@ -1,6 +1,6 @@
 # 💬 Simple Chat App
 
-🔗 **Live Demo:**[https://chat-app-p2h8.onrender.com)](https://chat-app-p2h8.onrender.com)
+🔗 **Live Demo:**[(https://chat-appp-23n8.onrender.com)](https://chat-appp-23n8.onrender.com)
 
 A minimal real-time chat application built with WebSockets. Just enter a name, email and start chatting — no login, no database.
 
