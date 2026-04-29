@@ -5,10 +5,11 @@
 }
 
 body {
-  background: #0f172a; /* soft dark blue */
-  color: #e2e8f0;
+  background: #0f172a;
   font-family: 'Inter', sans-serif;
-  height: 100vh;
+  color: #e2e8f0;
+
+  height: 100dvh; /* 🔥 FIX */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,48 +17,46 @@ body {
 
 /* Card */
 .card {
+  width: 92%;
+  max-width: 420px; /* not tiny */
   background: #1e293b;
   padding: 30px;
-  border-radius: 12px;
-  width: 320px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  border-radius: 16px;
 }
 
+/* Heading */
 h2 {
   text-align: center;
-  margin-bottom: 15px;
-  font-weight: 500;
+  margin-bottom: 20px;
+  font-size: 22px;
 }
 
 /* Inputs */
 input {
   width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
+  padding: 16px; /* bigger */
+  margin-bottom: 14px;
+  border-radius: 12px;
   border: 1px solid #334155;
   background: #0f172a;
-  color: #e2e8f0;
-  outline: none;
-}
-
-input:focus {
-  border-color: #6366f1;
+  color: white;
+  font-size: 16px; /* 🔥 readable */
 }
 
 /* Button */
 button {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: 12px;
   border: none;
   background: #6366f1;
   color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: 0.2s;
+  font-size: 16px;
 }
 
-button:hover {
-  background: #5458e6;
+/* Desktop */
+@media (min-width: 768px) {
+  .card {
+    padding: 40px;
+  }
 }

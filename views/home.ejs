@@ -8,30 +8,17 @@
 
 <body>
 
-<div class="container">
+<header>
+  <%= usrnm %>
+</header>
 
-  <div class="sidebar">
-    <h3>Room: <%= room %></h3>
-    <ul id="users"></ul>
-  </div>
+<ul id="messages"></ul>
+<div id="typing"></div>
 
-  <div class="chat">
-
-    <header>
-      <%= usrnm %>
-    </header>
-
-    <ul id="messages"></ul>
-    <div id="typing"></div>
-
-    <form id="form">
-      <input id="input" placeholder="Type message..." autocomplete="off"/>
-      <button>Send</button>
-    </form>
-
-  </div>
-
-</div>
+<form id="form">
+  <input id="input" placeholder="Type message..." autocomplete="off"/>
+  <button>Send</button>
+</form>
 
 <script src="/socket.io/socket.io.js"></script>
 
@@ -45,7 +32,6 @@ const input = document.getElementById('input');
 const form = document.getElementById('form');
 const messages = document.getElementById('messages');
 const typingDiv = document.getElementById('typing');
-const usersList = document.getElementById('users');
 
 socket.emit('join-room', { username, room });
 
@@ -71,21 +57,20 @@ socket.on('chat message', data => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-socket.on('room-users', users => {
-  usersList.innerHTML = '';
-  users.forEach(u => {
-    const li = document.createElement('li');
-    li.textContent = u;
-    usersList.appendChild(li);
-  });
-});
+socket.on('user-connected', msg => addSystem(msg));
+socket.on('user-disconnected', msg => addSystem(msg));
 
-/* Typing */
+function addSystem(msg) {
+  const div = document.createElement('div');
+  div.classList.add('system');
+  div.textContent = msg;
+  messages.appendChild(div);
+}
+
+/* typing */
 let typingUsers = new Set();
 
-input.addEventListener('input', () => {
-  socket.emit('typing');
-});
+input.addEventListener('input', () => socket.emit('typing'));
 
 socket.on('typing', user => {
   if (user !== username) {
@@ -100,9 +85,8 @@ socket.on('stop-typing', user => {
 });
 
 function renderTyping() {
-  typingDiv.textContent = typingUsers.size
-    ? [...typingUsers].join(', ') + ' typing...'
-    : '';
+  typingDiv.textContent =
+    typingUsers.size ? [...typingUsers].join(', ') + " typing..." : "";
 }
 
 let timeout;
