@@ -2,26 +2,288 @@
 <html>
 <head>
   <title>Chat</title>
-  <link rel="stylesheet" href="/css/home.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0; padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #0b0f19;
+      --surface: #151b2e;
+      --surface2: #1c2540;
+      --border: rgba(255,255,255,0.07);
+      --accent: #5b6ef5;
+      --accent2: #7c8cf8;
+      --text: #e8ecf7;
+      --text2: #8892b0;
+      --me-bg: #3d4fd6;
+      --other-bg: #1c2540;
+      --radius: 18px;
+      --header-h: 62px;
+      --input-h: 64px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+    }
+
+    /* ── LAYOUT SHELL ── */
+    .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 700px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* ── STICKY HEADER ── */
+    header {
+      flex-shrink: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .header-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-name {
+      font-size: 16px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .header-status {
+      font-size: 12px;
+      color: #4ade80;
+      margin-top: 1px;
+    }
+
+    .header-room {
+      font-size: 13px;
+      color: var(--text2);
+      background: var(--surface2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── MESSAGE AREA ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px 12px 6px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar { width: 3px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    /* ── MESSAGES ── */
+    .message {
+      max-width: 78%;
+      padding: 10px 13px;
+      margin: 3px 0;
+      border-radius: var(--radius);
+      font-size: 15px;
+      line-height: 1.5;
+      position: relative;
+      word-break: break-word;
+    }
+
+    .me {
+      background: var(--me-bg);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .other {
+      background: var(--other-bg);
+      border: 1px solid var(--border);
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+
+    .username {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.65;
+      margin-bottom: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    .me .username { color: rgba(255,255,255,0.7); }
+    .other .username { color: var(--accent2); }
+
+    .msg-time {
+      font-size: 10px;
+      opacity: 0.45;
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    /* consecutive same-sender: tighten gap */
+    .same-sender { margin-top: 1px; }
+
+    /* ── SYSTEM ── */
+    .system {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text2);
+      margin: 8px 0;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px;
+      align-self: center;
+    }
+
+    /* ── TYPING ── */
+    #typing {
+      flex-shrink: 0;
+      min-height: 22px;
+      padding: 2px 14px;
+      font-size: 12px;
+      color: var(--text2);
+      font-style: italic;
+    }
+
+    /* ── INPUT BAR ── */
+    #form {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    #input {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 11px 16px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      resize: none;
+      outline: none;
+      line-height: 1.4;
+      transition: border-color 0.2s;
+      overflow-y: auto;
+    }
+
+    #input:focus {
+      border-color: var(--accent);
+    }
+
+    #input::placeholder { color: var(--text2); }
+
+    /* ── SEND BUTTON ── */
+    #send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    #send-btn:active { transform: scale(0.92); background: var(--accent2); }
+    #send-btn svg { width: 20px; height: 20px; }
+  </style>
 </head>
 
 <body>
+<div class="shell">
 
-<header>
-  <%= usrnm %>
-</header>
+  <!-- STICKY HEADER -->
+  <header>
+    <div class="avatar" id="avatar-initials">?</div>
+    <div class="header-info">
+      <div class="header-name" id="display-name"><%= usrnm %></div>
+      <div class="header-status">online</div>
+    </div>
+    <div class="header-room" id="room-tag"># <% room %></div>
+  </header>
 
-<ul id="messages"></ul>
-<div id="typing"></div>
+  <!-- MESSAGES -->
+  <ul id="messages"></ul>
 
-<form id="form">
-  <input id="input" placeholder="Type message..." autocomplete="off"/>
-  <button>Send</button>
-</form>
+  <!-- TYPING -->
+  <div id="typing"></div>
+
+  <!-- INPUT BAR -->
+  <form id="form">
+    <textarea
+      id="input"
+      placeholder="Type a message…"
+      autocomplete="off"
+      rows="1"
+    ></textarea>
+    <button type="submit" id="send-btn" aria-label="Send">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </form>
+
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
-
 <script>
 const socket = io();
 
@@ -32,71 +294,111 @@ const input = document.getElementById('input');
 const form = document.getElementById('form');
 const messages = document.getElementById('messages');
 const typingDiv = document.getElementById('typing');
+const avatarEl = document.getElementById('avatar-initials');
+const roomTag = document.getElementById('room-tag');
+
+// Set avatar initials
+avatarEl.textContent = username.slice(0, 2).toUpperCase();
+roomTag.textContent = '# ' + room;
 
 socket.emit('join-room', { username, room });
 
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  if (input.value.trim()) {
-    socket.emit('chat message', input.value);
-    socket.emit('stop-typing');
-    input.value = '';
+// Auto-resize textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+// Enter to send (Shift+Enter for newline)
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
   }
 });
 
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  sendMessage();
+});
+
+function sendMessage() {
+  const val = input.value.trim();
+  if (!val) return;
+  socket.emit('chat message', val);
+  socket.emit('stop-typing');
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+let lastSender = null;
+
 socket.on('chat message', data => {
   const li = document.createElement('li');
-  li.classList.add('message', data.user === username ? 'me' : 'other');
+  const isMe = data.user === username;
+  const sameSender = lastSender === data.user;
+
+  li.classList.add('message', isMe ? 'me' : 'other');
+  if (sameSender) li.classList.add('same-sender');
+
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   li.innerHTML = `
-    <div class="username">${data.user}</div>
-    ${data.message}
+    ${!sameSender ? `<div class="username">${data.user}</div>` : ''}
+    <div class="msg-text">${escapeHtml(data.message)}</div>
+    <div class="msg-time">${time}</div>
   `;
 
   messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
+  lastSender = data.user;
+  scrollToBottom();
 });
 
-socket.on('user-connected', msg => addSystem(msg));
-socket.on('user-disconnected', msg => addSystem(msg));
+function scrollToBottom() {
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+socket.on('user-connected', msg => { lastSender = null; addSystem(msg); });
+socket.on('user-disconnected', msg => { lastSender = null; addSystem(msg); });
 
 function addSystem(msg) {
   const div = document.createElement('div');
   div.classList.add('system');
   div.textContent = msg;
   messages.appendChild(div);
+  scrollToBottom();
 }
 
-/* typing */
 let typingUsers = new Set();
 
 input.addEventListener('input', () => socket.emit('typing'));
 
 socket.on('typing', user => {
-  if (user !== username) {
-    typingUsers.add(user);
-    renderTyping();
-  }
+  if (user !== username) { typingUsers.add(user); renderTyping(); }
 });
 
 socket.on('stop-typing', user => {
-  typingUsers.delete(user);
-  renderTyping();
+  typingUsers.delete(user); renderTyping();
 });
 
 function renderTyping() {
   typingDiv.textContent =
-    typingUsers.size ? [...typingUsers].join(', ') + " typing..." : "";
+    typingUsers.size ? [...typingUsers].join(', ') + ' typing…' : '';
 }
 
 let timeout;
 input.addEventListener('keyup', () => {
   clearTimeout(timeout);
-  timeout = setTimeout(() => {
-    socket.emit('stop-typing');
-  }, 1000);
+  timeout = setTimeout(() => socket.emit('stop-typing'), 1000);
 });
-</script>
 
+// Keep latest message visible when keyboard opens on mobile
+window.addEventListener('resize', scrollToBottom);
+</script>
 </body>
 </html>
