@@ -1,404 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after {
-      margin: 0; padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
     :root {
-      --bg: #0b0f19;
-      --surface: #151b2e;
-      --surface2: #1c2540;
-      --border: rgba(255,255,255,0.07);
-      --accent: #5b6ef5;
-      --accent2: #7c8cf8;
-      --text: #e8ecf7;
-      --text2: #8892b0;
-      --me-bg: #3d4fd6;
-      --other-bg: #1c2540;
-      --radius: 18px;
-      --header-h: 62px;
-      --input-h: 64px;
+      --bg:     #0b0f19;
+      --surf:   #151b2e;
+      --surf2:  #1c2540;
+      --bd:     rgba(255,255,255,0.08);
+      --acc:    #5b6ef5;
+      --txt:    #e8ecf7;
+      --muted:  #8892b0;
+      --me:     #3d4fd6;
+      --them:   #1c2540;
+      --HH:     62px;
+      --IH:     64px;
     }
 
-    html, body {
-      height: 100%;
-      overflow: hidden;
+    html, body { height:100%; overflow:hidden; }
+
+    body {
       background: var(--bg);
       font-family: 'DM Sans', sans-serif;
-      color: var(--text);
+      color: var(--txt);
+      /* body fixed prevents iOS rubber-band scroll shifting header */
+      position: fixed;
+      width: 100%;
+      top: 0; left: 0;
     }
 
-    /* ── LAYOUT SHELL ── */
-    .shell {
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      max-width: 700px;
-      margin: 0 auto;
-      position: relative;
-    }
-
-    /* ── STICKY HEADER ── */
-    header {
-      flex-shrink: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    /* ─── HEADER: fixed, never moves ─── */
+    #hdr {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--HH);
+      background: var(--surf);
+      border-bottom: 1px solid var(--bd);
+      display: flex; align-items: center; gap: 12px;
       padding: 0 16px;
-      position: relative;
+      z-index: 200;
+    }
+    .av {
+      width:38px; height:38px; border-radius:50%;
+      background:var(--acc);
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:600; color:#fff; flex-shrink:0;
+    }
+    .hi { flex:1; min-width:0; }
+    .hn { font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hs { font-size:12px; color:#4ade80; margin-top:1px; }
+    .hr {
+      font-size:12px; color:var(--muted);
+      background:var(--surf2); padding:4px 10px;
+      border-radius:20px; border:1px solid var(--bd);
+      white-space:nowrap; flex-shrink:0;
+    }
+
+    /* ─── MESSAGES: fills between header and input bar ─── */
+    #msgs {
+      position: fixed;
+      top: var(--HH); left: 0; right: 0; bottom: var(--IH);
+      overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 12px 6px;
+      list-style: none;
+      display: flex; flex-direction: column;
       z-index: 10;
     }
+    #msgs::-webkit-scrollbar { width:3px; }
+    #msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:10px; }
 
-    .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      font-weight: 600;
-      color: white;
-      flex-shrink: 0;
+    .m {
+      max-width:78%; padding:9px 13px; margin:2px 0;
+      border-radius:18px; font-size:15px; line-height:1.45;
+      word-break:break-word;
+    }
+    .me   { background:var(--me); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+    .them { background:var(--them); border:1px solid var(--bd); margin-right:auto; border-bottom-left-radius:4px; }
+    .un   { font-size:11px; font-weight:600; opacity:0.6; margin-bottom:2px; }
+    .me .un { color:rgba(255,255,255,0.75); }
+    .them .un { color:#7c8cf8; }
+    .ts   { font-size:10px; opacity:0.38; text-align:right; margin-top:2px; }
+    .sys  {
+      text-align:center; font-size:12px; color:var(--muted);
+      background:rgba(255,255,255,0.04);
+      border-radius:20px; padding:3px 14px;
+      align-self:center; margin:6px 0;
     }
 
-    .header-info {
-      flex: 1;
-      min-width: 0;
+    /* ─── TYPING indicator ─── */
+    #typ {
+      position: fixed;
+      left:0; right:0;
+      bottom: var(--IH);
+      padding: 2px 16px 2px;
+      font-size:12px; color:var(--muted); font-style:italic;
+      background: var(--bg);
+      min-height:18px;
+      z-index:150;
+      transition: transform 0.05s linear;
     }
 
-    .header-name {
-      font-size: 16px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text);
+    /* ─── INPUT BAR: fixed to bottom, moves up with keyboard ─── */
+    #bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--IH);
+      background: var(--surf);
+      border-top: 1px solid var(--bd);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 200;
+      transition: transform 0.05s linear;
     }
 
-    .header-status {
-      font-size: 12px;
-      color: #4ade80;
-      margin-top: 1px;
+    #inp {
+      flex:1; height:42px; padding:0 16px;
+      border-radius:21px; border:1px solid var(--bd);
+      background:var(--surf2); color:var(--txt);
+      font-size:15px; font-family:'DM Sans',sans-serif;
+      outline:none; transition:border-color 0.15s;
     }
+    #inp:focus { border-color:var(--acc); }
+    #inp::placeholder { color:var(--muted); }
 
-    .header-room {
-      font-size: 13px;
-      color: var(--text2);
-      background: var(--surface2);
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      white-space: nowrap;
-      flex-shrink: 0;
+    #snd {
+      width:42px; height:42px; border-radius:50%; border:none;
+      background:var(--acc); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; flex-shrink:0;
+      transition:opacity 0.15s, transform 0.1s;
     }
-
-    /* ── MESSAGE AREA ── */
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 12px 12px 6px;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      -webkit-overflow-scrolling: touch;
-      scroll-behavior: smooth;
-    }
-
-    #messages::-webkit-scrollbar { width: 3px; }
-    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-    /* ── MESSAGES ── */
-    .message {
-      max-width: 78%;
-      padding: 10px 13px;
-      margin: 3px 0;
-      border-radius: var(--radius);
-      font-size: 15px;
-      line-height: 1.5;
-      position: relative;
-      word-break: break-word;
-    }
-
-    .me {
-      background: var(--me-bg);
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-
-    .other {
-      background: var(--other-bg);
-      border: 1px solid var(--border);
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
-
-    .username {
-      font-size: 11px;
-      font-weight: 600;
-      opacity: 0.65;
-      margin-bottom: 3px;
-      letter-spacing: 0.3px;
-    }
-
-    .me .username { color: rgba(255,255,255,0.7); }
-    .other .username { color: var(--accent2); }
-
-    .msg-time {
-      font-size: 10px;
-      opacity: 0.45;
-      margin-top: 3px;
-      text-align: right;
-    }
-
-    /* consecutive same-sender: tighten gap */
-    .same-sender { margin-top: 1px; }
-
-    /* ── SYSTEM ── */
-    .system {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text2);
-      margin: 8px 0;
-      padding: 4px 12px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 20px;
-      align-self: center;
-    }
-
-    /* ── TYPING ── */
-    #typing {
-      flex-shrink: 0;
-      min-height: 22px;
-      padding: 2px 14px;
-      font-size: 12px;
-      color: var(--text2);
-      font-style: italic;
-    }
-
-    /* ── INPUT BAR ── */
-    #form {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-    }
-
-    #input {
-      flex: 1;
-      min-height: 44px;
-      max-height: 120px;
-      padding: 11px 16px;
-      border-radius: 24px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 15px;
-      font-family: 'DM Sans', sans-serif;
-      resize: none;
-      outline: none;
-      line-height: 1.4;
-      transition: border-color 0.2s;
-      overflow-y: auto;
-    }
-
-    #input:focus {
-      border-color: var(--accent);
-    }
-
-    #input::placeholder { color: var(--text2); }
-
-    /* ── SEND BUTTON ── */
-    #send-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    #send-btn:active { transform: scale(0.92); background: var(--accent2); }
-    #send-btn svg { width: 20px; height: 20px; }
+    #snd:active { opacity:0.8; transform:scale(0.91); }
+    #snd svg { width:18px; height:18px; }
   </style>
 </head>
-
 <body>
-<div class="shell">
 
-  <!-- STICKY HEADER -->
-  <header>
-    <div class="avatar" id="avatar-initials">?</div>
-    <div class="header-info">
-      <div class="header-name" id="display-name"><%= usrnm %></div>
-      <div class="header-status">online</div>
-    </div>
-    <div class="header-room" id="room-tag"># <% room %></div>
-  </header>
+<div id="hdr">
+  <div class="av" id="av">?</div>
+  <div class="hi">
+    <div class="hn" id="hn"><%= usrnm %></div>
+    <div class="hs">online</div>
+  </div>
+  <div class="hr" id="hr">#room</div>
+</div>
 
-  <!-- MESSAGES -->
-  <ul id="messages"></ul>
+<ul id="msgs"></ul>
 
-  <!-- TYPING -->
-  <div id="typing"></div>
+<div id="typ"></div>
 
-  <!-- INPUT BAR -->
-  <form id="form">
-    <textarea
-      id="input"
-      placeholder="Type a message…"
-      autocomplete="off"
-      rows="1"
-    ></textarea>
-    <button type="submit" id="send-btn" aria-label="Send">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    </button>
-  </form>
-
+<div id="bar">
+  <input id="inp" type="text" placeholder="Type a message…" autocomplete="off" />
+  <button id="snd" aria-label="Send">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  </button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+const ME   = "<%= usrnm %>";
+const ROOM = "<%= room %>";
 
-const username = "<%= usrnm %>";
-const room = "<%= room %>";
+const inp  = document.getElementById('inp');
+const msgs = document.getElementById('msgs');
+const typ  = document.getElementById('typ');
+const bar  = document.getElementById('bar');
+const typEl= document.getElementById('typ');
 
-const input = document.getElementById('input');
-const form = document.getElementById('form');
-const messages = document.getElementById('messages');
-const typingDiv = document.getElementById('typing');
-const avatarEl = document.getElementById('avatar-initials');
-const roomTag = document.getElementById('room-tag');
+document.getElementById('av').textContent = ME.slice(0,2).toUpperCase();
+document.getElementById('hn').textContent = ME;
+document.getElementById('hr').textContent = '# ' + ROOM;
 
-// Set avatar initials
-avatarEl.textContent = username.slice(0, 2).toUpperCase();
-roomTag.textContent = '# ' + room;
+socket.emit('join-room', { username: ME, room: ROOM });
 
-socket.emit('join-room', { username, room });
-
-// Auto-resize textarea
-input.addEventListener('input', () => {
-  input.style.height = 'auto';
-  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-});
-
-// Enter to send (Shift+Enter for newline)
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
+/* ── Keep input bar above keyboard using visualViewport ── */
+if (window.visualViewport) {
+  function onVVResize() {
+    const vv   = window.visualViewport;
+    const diff = window.innerHeight - vv.offsetTop - vv.height;
+    bar.style.transform  = `translateY(-${diff}px)`;
+    typEl.style.transform= `translateY(-${diff}px)`;
+    scrollBottom();
   }
-});
-
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  sendMessage();
-});
-
-function sendMessage() {
-  const val = input.value.trim();
-  if (!val) return;
-  socket.emit('chat message', val);
-  socket.emit('stop-typing');
-  input.value = '';
-  input.style.height = 'auto';
+  window.visualViewport.addEventListener('resize', onVVResize);
+  window.visualViewport.addEventListener('scroll', onVVResize);
 }
 
+function scrollBottom() {
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/* ── Send ── */
+function send() {
+  const v = inp.value.trim();
+  if (!v) return;
+  socket.emit('chat message', v);
+  socket.emit('stop-typing');
+  inp.value = '';
+  /* intentionally do NOT blur — keyboard stays up */
+  scrollBottom();
+}
+
+document.getElementById('snd').addEventListener('click', send);
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); send(); }
+});
+
+/* ── Receive messages ── */
 let lastSender = null;
 
 socket.on('chat message', data => {
-  const li = document.createElement('li');
-  const isMe = data.user === username;
-  const sameSender = lastSender === data.user;
+  const li   = document.createElement('li');
+  const isMe = data.user === ME;
+  const same = lastSender === data.user;
+  li.className = 'm ' + (isMe ? 'me' : 'them');
 
-  li.classList.add('message', isMe ? 'me' : 'other');
-  if (sameSender) li.classList.add('same-sender');
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  li.innerHTML =
+    (!same ? `<div class="un">${esc(data.user)}</div>` : '') +
+    `<div>${esc(data.message)}</div>` +
+    `<div class="ts">${t}</div>`;
 
-  const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  li.innerHTML = `
-    ${!sameSender ? `<div class="username">${data.user}</div>` : ''}
-    <div class="msg-text">${escapeHtml(data.message)}</div>
-    <div class="msg-time">${time}</div>
-  `;
-
-  messages.appendChild(li);
+  msgs.appendChild(li);
   lastSender = data.user;
-  scrollToBottom();
+  scrollBottom();
 });
 
-function scrollToBottom() {
-  messages.scrollTop = messages.scrollHeight;
+socket.on('user-connected',    m => { lastSender=null; sys(m); });
+socket.on('user-disconnected', m => { lastSender=null; sys(m); });
+
+function sys(m) {
+  const d = document.createElement('div');
+  d.className='sys'; d.textContent=m;
+  msgs.appendChild(d); scrollBottom();
 }
 
-function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+/* ── Typing ── */
+let tUsers = new Set(), tTO;
 
-socket.on('user-connected', msg => { lastSender = null; addSystem(msg); });
-socket.on('user-disconnected', msg => { lastSender = null; addSystem(msg); });
-
-function addSystem(msg) {
-  const div = document.createElement('div');
-  div.classList.add('system');
-  div.textContent = msg;
-  messages.appendChild(div);
-  scrollToBottom();
-}
-
-let typingUsers = new Set();
-
-input.addEventListener('input', () => socket.emit('typing'));
-
-socket.on('typing', user => {
-  if (user !== username) { typingUsers.add(user); renderTyping(); }
+inp.addEventListener('input', () => socket.emit('typing'));
+inp.addEventListener('keyup',  () => {
+  clearTimeout(tTO);
+  tTO = setTimeout(() => socket.emit('stop-typing'), 1000);
 });
 
-socket.on('stop-typing', user => {
-  typingUsers.delete(user); renderTyping();
-});
+socket.on('typing',      u => { if(u!==ME){ tUsers.add(u);    renderT(); }});
+socket.on('stop-typing', u => { tUsers.delete(u); renderT(); });
 
-function renderTyping() {
-  typingDiv.textContent =
-    typingUsers.size ? [...typingUsers].join(', ') + ' typing…' : '';
+function renderT() {
+  typ.textContent = tUsers.size ? [...tUsers].join(', ') + ' typing…' : '';
 }
 
-let timeout;
-input.addEventListener('keyup', () => {
-  clearTimeout(timeout);
-  timeout = setTimeout(() => socket.emit('stop-typing'), 1000);
-});
-
-// Keep latest message visible when keyboard opens on mobile
-window.addEventListener('resize', scrollToBottom);
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
 </body>
 </html>
